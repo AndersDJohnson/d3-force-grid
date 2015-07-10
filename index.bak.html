@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+circle {
+  stroke: #fff;
+}
+
+</style>
+<body>
+<script src="bower_components/d3/d3.js"></script>
+<script>
+
+var width = 500;
+var height = 300;
+// var h = 10;
+// var w = 20;
+var h = 6;
+var w = 12;
+var n = h * w; // total number of nodes
+var hp = height / h;
+var wp = width / w;
+var padding = wp; // separation between nodes
+var radius = 8;
+var maxRadius = radius;
+
+
+var color = d3.scale.category10()
+    .domain(d3.range(n));
+
+// var x = d3.scale.ordinal()
+//     .domain(d3.range(m))
+//     .rangePoints([0, width], 1);
+
+var nodes = d3.range(n).map(function(i) {
+  console.log(arguments)
+  // var i = Math.floor(Math.random() * m),
+  //     v = (i + 1) / m * -Math.log(Math.random());
+  return {
+    // radius: Math.sqrt(v) * maxRadius,
+    radius: radius,
+    color: color(i),
+    cx: (i % w) * wp,
+    cy: Math.floor(i / w) * hp
+  };
+});
+
+var root = {
+  fixed: true,
+  radius: 0
+};
+
+nodes.unshift(root);
+
+var force = d3.layout.force()
+    .nodes(nodes)
+    .size([width, height])
+    .gravity(0)
+    .charge(0)
+    .on("tick", tick)
+    .start();
+
+force.start();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var circle = svg.selectAll("circle")
+    .data(nodes.slice(1))
+  .enter().append("circle")
+    .attr("r", function(d) { return d.radius; })
+    .style("fill", function(d) { return d.color; })
+    .call(force.drag);
+
+
+svg.selectAll("circle")
+    .data(nodes.slice(1))
+  .enter().append("circle")
+    .attr("r", function(d) { return d.radius; })
+    .style("fill", function(d, i) { return color(i % 3); });
+
+svg.on("mousemove", function() {
+  var p1 = d3.mouse(this);
+  root.px = p1[0];
+  root.py = p1[1];
+  console.log('root', root);
+  force.resume();
+});
+
+function tick(e) {
+
+  // var q = d3.geom.quadtree(nodes);
+  // var i = 0;
+  // var n = nodes.length;
+  // while (++i < n) q.visit(collide(nodes[i]));
+
+  // attract(.5)(root);
+
+  circle
+      .each(gravity(.2 * e.alpha))
+      .each(collide(.5))
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; });
+}
+
+// Move nodes toward local focal point.
+function gravity(alpha) {
+  return function(d) {
+    d.y += (d.cy - d.y) * alpha;
+    d.x += (d.cx - d.x) * alpha;
+  };
+}
+
+function attract(alpha) {
+  var quadtree = d3.geom.quadtree(nodes);
+  return function(d) {
+    // Radius determines whether we'll recurse.
+    // var r = d.radius + maxRadius + padding;
+    var r = 100;
+    var nx1 = d.x - r,
+        nx2 = d.x + r,
+        ny1 = d.y - r,
+        ny2 = d.y + r;
+    quadtree.visit(function(quad, x1, y1, x2, y2) {
+      // Operate only if quad point is not current point.
+      if (quad.point && (quad.point !== d)) {
+        // Distance between quad point and current point
+        var x = d.x - quad.point.x,
+            y = d.y - quad.point.y,
+            // Diagonal distance (Pythagorean)
+            l = Math.sqrt(x * x + y * y),
+            // Minimum distance between center points
+            r = d.radius + quad.point.radius;
+        // if (l < wp/2) {
+        if (l < wp) {
+          return true;
+        }
+        // If minimum distance is less than distance:
+        if (l < 100) {
+          // How close are we? From 0-1 * alpha.
+          // l = (l - r) / l * alpha;
+          l = 0.5;
+          // Move point closer, the closer we are.
+          d.x += x *= l;
+          d.y += y *= l;
+          // Adjust the quad point by how much we moved the point.
+          // TODO: Why?
+          quad.point.x += x;
+          quad.point.y += y;
+        }
+      }
+      // Stop recursion (return true) on current branch, if
+      // current quad corners don't bound current reasonable radius.
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    });
+  };
+}
+
+// Resolve collisions between nodes.
+function collide(alpha) {
+  var quadtree = d3.geom.quadtree(nodes);
+  return function(d) {
+    // Radius determines whether we'll recurse.
+    var r = d.radius + maxRadius + padding,
+        nx1 = d.x - r,
+        nx2 = d.x + r,
+        ny1 = d.y - r,
+        ny2 = d.y + r;
+    quadtree.visit(function(quad, x1, y1, x2, y2) {
+      // Operate only if quad point is not current point.
+      if (quad.point && (quad.point !== d)) {
+        // Distance between quad point and current point
+        var x = d.x - quad.point.x,
+            y = d.y - quad.point.y,
+            // Diagonal distance (Pythagorean)
+            l = Math.sqrt(x * x + y * y),
+            // Minimum distance between center points
+            r = d.radius + quad.point.radius;
+
+        // if (l < wp) {
+        //   return true;
+        // }
+
+        // If minimum distance is less than distance:
+        if (l < r) {
+          // How close are we? From 0-1 * alpha.
+          l = (l - r) / l * alpha;
+          // Move point further away, the closer we are.
+          d.x -= x *= l;
+          d.y -= y *= l;
+          // Adjust the quad point by how much we moved the point.
+          // TODO: Why?
+          quad.point.x += x;
+          quad.point.y += y;
+        }
+      }
+      // Stop recursion (return true) on current branch, if
+      // current quad corners don't bound current reasonable radius.
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    });
+  };
+}
+
+</script>

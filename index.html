@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+circle {
+  stroke: #fff;
+}
+
+.my-d3-force-grid {
+  background: black;
+}
+
+</style>
+<body>
+<script src="bower_components/d3/d3.js"></script>
+<script src="bower_components/d3-plugins/fisheye/fisheye.js"></script>
+<script>
+
+var width = 500;
+var height = 300;
+// var h = 10;
+// var w = 20;
+// var h = 6;
+// var w = 12;
+// var h = 8;
+// var w = 12;
+var h = 6;
+var w = 8;
+var n = h * w; // total number of nodes
+var hp = height / (h-1);
+var wp = width / (w-1);
+var padding = wp; // separation between nodes
+// var radius = 8;
+// var radius = 3;
+var radius = 2;
+var maxRadius = radius;
+
+var fisheyeing = true;
+var lastFocus = null;
+
+
+var color;
+color = d3.scale.category10()
+    .domain(d3.range(n));
+color = function () { return 'white'; };
+
+
+var triangular = true;
+
+
+var nodes = d3.range(n).map(function(i) {
+  var cx = (i % w) * wp;
+  var cy = Math.floor(i / w) * hp;
+  var row = Math.floor(i / w);
+  if (triangular && row % 2 == 0) {
+    cx += wp/2;
+  }
+  return {
+    radius: radius,
+    color: color(i),
+    x: cx,
+    y: cy,
+    cx: cx,
+    cy: cy
+  };
+});
+
+var links = [];
+
+// squares
+d3.range(n).map(function(i) {
+  var j = i+1;
+  var iw = i % w;
+  var jw = j % w;
+  if (iw < jw) {
+    links.push({
+      source: i,
+      target: j
+    });
+  }
+  var jh = i + w;
+  if (jh < n) {
+    links.push({
+      source: i,
+      target: jh
+    });
+  }
+  if (triangular) {
+    var row = Math.floor(i / w);
+    if (row % 2 == 0) {
+      var jh = i + w + 1;
+      if (jh < n && jh % w > iw % w) {
+        links.push({
+          source: i,
+          target: jh
+        });
+      }
+    }
+    else {
+      var jh = i + w - 1;
+      if (jh < n && jh % w < iw % w) {
+        links.push({
+          source: i,
+          target: jh
+        });
+      }
+    }
+  }
+})
+.filter(function (e) { return e; })
+
+var root = {
+  fixed: true,
+  radius: 0
+};
+
+nodes.push(root);
+
+var force = d3.layout.force()
+    .nodes(nodes)
+    // .links(links)
+    .size([width, height])
+    .gravity(0)
+    .charge(0.5)
+    // .linkDistance(null)
+    .on("tick", tick)
+
+force.start();
+
+var svg = d3.select("body").append("svg")
+    // .attr("width", width)
+    // .attr("height", height)
+    .attr("width", '100%')
+    .attr("height", '100%')
+    .attr("class", "my-d3-force-grid")
+    .attr('viewBox', '0 0 ' + width + ' ' + height)
+    .attr('preserveAspectRatio', 'xMinYMin meet')
+
+var node = svg.selectAll(".node")
+    .data(nodes.slice(0, -1))
+  .enter().append("circle")
+    .attr('class', 'node')
+    .attr("r", function(d) { return d.radius; })
+    .style("fill", function(d) { return d.color; })
+    .call(force.drag);
+
+var link = svg.selectAll('link');
+
+link = link.data(links)
+  .enter().append('line')
+    .attr('class', 'link')
+    // .style("stroke", function(d) { return 'white'; })
+    .style("stroke", function(d) { return 'rgba(255,255,255,0.5)'; })
+    .style("stroke-width", function(d) { return 1; })
+    .attr('x1', function (d) { return nodes[d.source].x; })
+    .attr('y1', function (d) { return nodes[d.source].y; })
+    .attr('x2', function (d) { return nodes[d.target].x; })
+    .attr('y2', function (d) { return nodes[d.target].y; })
+
+var fisheye = d3.fisheye
+  .circular()
+  // .scale()
+  .radius(100)
+  // .radius(150)
+  // .distortion(-3);
+  .distortion(-2.5);
+  // .distortion(-2);
+  // .distortion(-1.5);
+  // .distortion(-1);
+
+svg.on('mousemove', function () {
+  fisheyeing = true;
+  var m = d3.mouse(this);
+  lastFocus = m;
+  fisheye.focus(m);
+  force.resume();
+});
+
+svg.on('mouseleave', function () {
+  fisheyeing = false;
+  node
+    .attr('cx', function (d) { return d.x; })
+    .attr('cy', function (d) { return d.y; })
+  force.resume();
+});
+
+function tick(e) {
+  node
+    .each(function (d) {
+      if (fisheyeing) {
+        d.fisheye = fisheye(d);
+        d.distorted = {
+          x: d.fisheye.x,
+          y: d.fisheye.y
+        };
+      }
+      else {
+        d.distorted = d.distorted || {
+          x: d.fisheye.x,
+          y: d.fisheye.y
+        };
+        approachPoint(d.distorted, {x: d.cx, y: d.cy}, 0.1)
+      }
+    })
+    .each(gravity(.2 * e.alpha))
+    .each(collide(.5))
+    .attr("cx", function(d) { return d.distorted.x; })
+    .attr("cy", function(d) { return d.distorted.y; })
+
+  link
+    .attr('x1', function (d) {
+      var n = nodes[d.source], d = n.distorted; return d ? d.x : null;
+    })
+    .attr('y1', function (d) {
+      var n = nodes[d.source], d = n.distorted; return d ? d.y : null;
+    })
+    .attr('x2', function (d) {
+      var n = nodes[d.target], d = n.distorted; return d ? d.x : null;
+    })
+    .attr('y2', function (d) {
+      var n = nodes[d.target], d = n.distorted; return d ? d.y : null;
+    })
+    // .attr('x1', function (d) { return nodes[d.source].x; })
+    // .attr('y1', function (d) { return nodes[d.source].y; })
+    // .attr('x2', function (d) { return nodes[d.target].x; })
+    // .attr('y2', function (d) { return nodes[d.target].y; })
+};
+
+// Move nodes toward local focal point.
+function gravity(alpha) {
+  return function(d) {
+    d.y += (d.cy - d.y) * alpha;
+    d.x += (d.cx - d.x) * alpha;
+  };
+};
+
+function approach(from, to, alpha) {
+  return (to - from) * alpha;
+};
+
+function approachPoint(from, to, alpha) {
+  from.x += approach(from.x, to.x, alpha);
+  from.y += approach(from.y, to.y, alpha);
+}
+
+
+// Resolve collisions between nodes.
+function collide(alpha) {
+  var quadtree = d3.geom.quadtree(nodes);
+  return function(d) {
+    // Radius determines whether we'll recurse.
+    var r = d.radius + maxRadius + padding,
+        nx1 = d.x - r,
+        nx2 = d.x + r,
+        ny1 = d.y - r,
+        ny2 = d.y + r;
+    quadtree.visit(function(quad, x1, y1, x2, y2) {
+      // Operate only if quad point is not current point.
+      if (quad.point && (quad.point !== d)) {
+        // Distance between quad point and current point
+        var x = d.x - quad.point.x,
+            y = d.y - quad.point.y,
+            // Diagonal distance (Pythagorean)
+            l = Math.sqrt(x * x + y * y),
+            // Minimum distance between center points
+            r = d.radius + quad.point.radius;
+
+        // if (l < wp) {
+        //   return true;
+        // }
+
+        // If minimum distance is less than distance:
+        if (l < r) {
+          // console.log('colliding')
+          // How close are we? From 0-1 * alpha.
+          l = (l - r) / l * alpha;
+          // Move point further away, the closer we are.
+          d.x -= x *= l;
+          d.y -= y *= l;
+          // Adjust the quad point by how much we moved the point.
+          // TODO: Why?
+          quad.point.x += x;
+          quad.point.y += y;
+        }
+      }
+      // Stop recursion (return true) on current branch, if
+      // current quad corners don't bound current reasonable radius.
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    });
+  };
+};
+
+</script>
