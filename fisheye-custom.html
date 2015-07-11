@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+circle {
+  stroke: #fff;
+}
+
+.my-d3-force-grid {
+  background: darkorchid;
+}
+
+</style>
+<body>
+<script src="bower_components/d3/d3.js"></script>
+<script src="bower_components/d3-plugins/fisheye/fisheye.js"></script>
+<script>
+
+var noop = function () {};
+
+var width = 1000;
+var height = 600;
+// var h = 10;
+// var w = 20;
+// var h = 6;
+// var w = 12;
+// var h = 6;
+// var w = 8;
+// var h = 8;
+// var w = 12;
+var h = 16;
+var w = 22;
+
+var hp = height / (h-1);
+var wp = width / (w-1);
+var padding = wp; // separation between nodes
+// var radius = 8;
+// var radius = 3;
+// var radius = 2;
+var radius = 1;
+var maxRadius = radius;
+
+var overwidth = width + 2 * wp;
+var overheight = height + 2 * hp;
+
+h += 2;
+w += 2;
+
+var n = h * w; // total number of nodes
+
+var fisheyeing = true;
+var lastFocus = null;
+var mouse;
+var mouseover = true;
+
+
+var fillColors = ['rgba(0,0,0,0)', 'white', '#888', '#444']
+
+
+// var fills = [[8,4,"below"],[10,4,"below"],[8,5,"below"],[9,5,"below"],[10,5,"above"],[11,5,"below"],[7,6,"below"],[8,6,"above"],[9,6,"below"],[10,6,"above"],[11,6,"below"],[7,7,"below"],[8,7,"above"],[9,7,"above"],[10,7,"below"],[11,7,"above"],[12,7,"below"],[6,8,"below"],[7,8,"above"],[8,8,"below"],[9,8,"above"],[10,8,"below"],[11,8,"above"],[12,8,"below"],[6,9,"below"],[7,9,"above"],[8,9,"below"],[9,9,"below"],[10,9,"above"],[11,9,"below"],[12,9,"above"],[13,9,"below"],[1,10,"below"],[5,10,"below"],[6,10,"above"],[8,10,"above"],[10,10,"above"],[12,10,"above"],[13,10,"below"],[2,11,"above"],[6,11,"above"],[7,11,"below"],[8,11,"below"],[9,11,"below"],[10,11,"below"],[11,11,"below"],[12,11,"below"],[13,11,"above"],[13,11,"below"],[5,12,"above"],[7,12,"above"],[8,12,"above"],[9,12,"above"],[10,12,"above"],[11,12,"above"],[12,12,"above"],[13,12,"above"]];
+// var fills = [[9,1,"below"],[11,1,"below"],[12,1,"below"],[8,2,"below"],[9,2,"below"],[10,2,"above"],[11,2,"above"],[11,2,"below"],[12,2,"below"],[8,3,"below"],[9,3,"above"],[9,3,"below"],[10,3,"below"],[11,3,"above"],[12,3,"above"],[12,3,"below"],[13,3,"below"],[7,4,"below"],[8,4,"above"],[8,4,"below"],[9,4,"above"],[9,4,"below"],[10,4,"below"],[11,4,"above"],[12,4,"above"],[12,4,"below"],[13,4,"below"],[7,5,"below"],[8,5,"above"],[8,5,"below"],[9,5,"above"],[10,5,"above"],[10,5,"below"],[11,5,"below"],[12,5,"above"],[13,5,"above"],[13,5,"below"],[14,5,"below"],[6,6,"below"],[7,6,"above"],[7,6,"below"],[8,6,"above"],[9,6,"above"],[10,6,"above"],[10,6,"below"],[11,6,"below"],[12,6,"above"],[13,6,"above"],[13,6,"below"],[14,6,"below"],[6,7,"below"],[7,7,"above"],[7,7,"below"],[8,7,"above"],[9,7,"below"],[10,7,"above"],[11,7,"above"],[11,7,"below"],[12,7,"below"],[13,7,"above"],[14,7,"above"],[14,7,"below"],[15,7,"below"],[5,8,"below"],[6,8,"above"],[6,8,"below"],[7,8,"above"],[8,8,"below"],[9,8,"below"],[10,8,"above"],[11,8,"above"],[11,8,"below"],[12,8,"below"],[13,8,"above"],[14,8,"above"],[14,8,"below"],[15,8,"below"],[5,9,"below"],[6,9,"above"],[6,9,"below"],[7,9,"above"],[8,9,"below"],[9,9,"above"],[9,9,"below"],[10,9,"below"],[11,9,"above"],[12,9,"above"],[12,9,"below"],[13,9,"below"],[14,9,"above"],[15,9,"above"],[15,9,"below"],[16,9,"below"],[4,10,"below"],[5,10,"above"],[5,10,"below"],[6,10,"above"],[8,10,"above"],[9,10,"above"],[11,10,"above"],[12,10,"above"],[14,10,"above"],[15,10,"above"],[15,10,"below"],[16,10,"below"],[5,11,"above"],[5,11,"below"],[6,11,"above"],[7,11,"below"],[8,11,"below"],[9,11,"below"],[10,11,"below"],[11,11,"below"],[12,11,"below"],[13,11,"below"],[14,11,"below"],[15,11,"above"],[15,11,"below"],[16,11,"above"],[16,11,"below"],[4,12,"above"],[5,12,"above"],[6,12,"below"],[7,12,"above"],[7,12,"below"],[8,12,"above"],[8,12,"below"],[9,12,"above"],[9,12,"below"],[10,12,"above"],[10,12,"below"],[11,12,"above"],[11,12,"below"],[12,12,"above"],[12,12,"below"],[13,12,"above"],[13,12,"below"],[14,12,"above"],[14,12,"below"],[15,12,"above"],[15,12,"below"],[16,12,"above"],[5,13,"above"],[7,13,"above"],[8,13,"above"],[9,13,"above"],[10,13,"above"],[11,13,"above"],[12,13,"above"],[13,13,"above"],[14,13,"above"],[15,13,"above"],[16,13,"above"]];
+// var fills = [[7,1,"below"],[9,1,"below"],[10,1,"below"],[6,2,"below"],[7,2,"below"],[8,2,"above"],[9,2,"above"],[9,2,"below"],[10,2,"below"],[6,3,"below"],[7,3,"above"],[7,3,"below"],[8,3,"below"],[9,3,"above"],[10,3,"above"],[10,3,"below"],[11,3,"below"],[5,4,"below"],[6,4,"above"],[6,4,"below"],[7,4,"above"],[7,4,"below"],[8,4,"below"],[9,4,"above"],[10,4,"above"],[10,4,"below"],[11,4,"below"],[5,5,"below"],[6,5,"above"],[6,5,"below"],[7,5,"above"],[8,5,"above"],[8,5,"below"],[9,5,"below"],[10,5,"above"],[11,5,"above"],[11,5,"below"],[12,5,"below"],[4,6,"below"],[5,6,"above"],[5,6,"below"],[6,6,"above"],[7,6,"above"],[8,6,"above"],[8,6,"below"],[9,6,"below"],[10,6,"above"],[11,6,"above"],[11,6,"below"],[12,6,"below"],[4,7,"below"],[5,7,"above"],[5,7,"below"],[6,7,"above"],[7,7,"below"],[8,7,"above"],[9,7,"above"],[9,7,"below"],[10,7,"below"],[11,7,"above"],[12,7,"above"],[12,7,"below"],[13,7,"below"],[3,8,"below"],[4,8,"above"],[4,8,"below"],[5,8,"above"],[6,8,"below"],[7,8,"below"],[8,8,"above"],[9,8,"above"],[9,8,"below"],[10,8,"below"],[11,8,"above"],[12,8,"above"],[12,8,"below"],[13,8,"below"],[3,9,"below"],[4,9,"above"],[4,9,"below"],[5,9,"above"],[6,9,"below"],[7,9,"above"],[7,9,"below"],[8,9,"below"],[9,9,"above"],[10,9,"above"],[10,9,"below"],[11,9,"below"],[12,9,"above"],[13,9,"above"],[13,9,"below"],[14,9,"below"],[2,10,"below"],[3,10,"above"],[3,10,"below"],[4,10,"above"],[6,10,"above"],[7,10,"above"],[9,10,"above"],[10,10,"above"],[12,10,"above"],[13,10,"above"],[13,10,"below"],[14,10,"below"],[3,11,"above"],[3,11,"below"],[4,11,"above"],[5,11,"below"],[6,11,"below"],[7,11,"below"],[8,11,"below"],[9,11,"below"],[10,11,"below"],[11,11,"below"],[12,11,"below"],[13,11,"above"],[13,11,"below"],[14,11,"above"],[14,11,"below"],[2,12,"above"],[3,12,"above"],[4,12,"below"],[5,12,"above"],[5,12,"below"],[6,12,"above"],[6,12,"below"],[7,12,"above"],[7,12,"below"],[8,12,"above"],[8,12,"below"],[9,12,"above"],[9,12,"below"],[10,12,"above"],[10,12,"below"],[11,12,"above"],[11,12,"below"],[12,12,"above"],[12,12,"below"],[13,12,"above"],[13,12,"below"],[14,12,"above"],[3,13,"above"],[5,13,"above"],[6,13,"above"],[7,13,"above"],[8,13,"above"],[9,13,"above"],[10,13,"above"],[11,13,"above"],[12,13,"above"],[13,13,"above"],[14,13,"above"]];
+// var fills = [[8,1,"below","white",1],[9,1,"below","#888",2],[7,2,"below","white",1],[8,2,"above","#888",2],[8,2,"below","white",1],[9,2,"below","#888",2],[7,3,"below","white",null],[8,3,"above","white",1],[8,3,"below","#444",3],[9,3,"above","#888",2],[9,3,"below","white",null],[10,3,"below","#888",2],[6,4,"below","white",null],[7,4,"above","white",1],[7,4,"below","#444",3],[8,4,"above","white",null],[9,4,"above","#888",2],[9,4,"below","white",null],[10,4,"below","#888",2],[6,5,"below","white",null],[7,5,"above","white",null],[7,5,"below","#444",3],[8,5,"above","#444",3],[9,5,"above","white",null],[10,5,"above","#888",2],[10,5,"below","white",null],[11,5,"below","#888",2],[5,6,"below","white",null],[6,6,"above","white",null],[6,6,"below","white",1],[7,6,"above","#444",3],[7,6,"below","#888",2],[9,6,"above","white",null],[10,6,"above","#888",2],[10,6,"below","white",null],[11,6,"below","#888",2],[5,7,"below","white",null],[6,7,"above","white",null],[6,7,"below","#444",3],[7,7,"above","#888",2],[7,7,"below","white",1],[8,7,"below","#888",2],[10,7,"above","white",null],[11,7,"above","#888",2],[11,7,"below","white",null],[12,7,"below","#888",2],[4,8,"below","white",null],[5,8,"above","white",null],[5,8,"below","#444",3],[6,8,"above","white",1],[7,8,"above","#888",2],[7,8,"below","white",1],[8,8,"below","#888",2],[9,8,"below","#888",2],[10,8,"above","white",null],[10,8,"below","#888",2],[11,8,"above","#888",2],[11,8,"below","#888",2],[12,8,"below","#888",2],[4,9,"below","white",null],[5,9,"above","white",null],[5,9,"below","#444",3],[6,9,"above","#444",3],[7,9,"above","white",1],[8,9,"above","#888",2],[8,9,"below","white",1],[9,9,"above","#888",2],[9,9,"below","#444",3],[10,9,"above","#888",2],[10,9,"below","#444",3],[11,9,"above","#888",2],[11,9,"below","#444",3],[12,9,"above","#888",2],[12,9,"below","white",null],[13,9,"below","#888",2],[3,10,"below","white",null],[4,10,"above","white",null],[4,10,"below","#444",3],[5,10,"above","#444",3],[7,10,"above","white",1],[7,10,"below","white",null],[8,10,"above","#444",3],[8,10,"below","#444",3],[9,10,"above","#444",3],[10,10,"above","#444",3],[11,10,"above","#444",3],[12,10,"above","#888",2],[12,10,"below","white",null],[13,10,"below","#888",2],[3,11,"below","white",null],[4,11,"above","white",null],[4,11,"below","#444",3],[5,11,"above","#444",3],[7,11,"below","white",1],[8,11,"above","white",1],[8,11,"below","#444",3],[9,11,"above","#444",3],[12,11,"above","white",null],[13,11,"above","#888",2],[13,11,"below","white",null],[14,11,"below","#888",2],[2,12,"below","white",null],[3,12,"above","white",null],[3,12,"below","#444",3],[4,12,"above","#444",3],[4,12,"below","#888",2],[5,12,"below","#888",2],[6,12,"below","#888",2],[7,12,"above","white",null],[7,12,"below","#444",3],[8,12,"above","#444",3],[8,12,"below","#888",2],[9,12,"below","#888",2],[10,12,"below","#888",2],[11,12,"below","#888",2],[12,12,"above","white",null],[12,12,"below","#888",2],[13,12,"above","#888",2],[13,12,"below","#888",2],[14,12,"below","#888",2],[3,13,"above","white",null],[3,13,"below","#444",3],[4,13,"above","#444",3],[4,13,"below","#444",3],[5,13,"above","#888",2],[5,13,"below","#444",3],[6,13,"above","#888",2],[6,13,"below","#444",3],[7,13,"above","white",1],[7,13,"below","#444",3],[8,13,"above","#444",3],[8,13,"below","#444",3],[9,13,"above","#888",2],[9,13,"below","#444",3],[10,13,"above","#888",2],[10,13,"below","#444",3],[11,13,"above","#888",2],[11,13,"below","#444",3],[12,13,"above","#888",2],[12,13,"below","#444",3],[13,13,"above","#888",2],[13,13,"below","#444",3],[14,13,"above","#888",2],[14,13,"below","#444",3],[2,14,"above","white",null],[3,14,"above","#444",3],[4,14,"above","#444",3],[5,14,"above","#444",3],[6,14,"above","#444",3],[7,14,"above","#444",3],[8,14,"above","#444",3],[9,14,"above","#444",3],[10,14,"above","#444",3],[11,14,"above","#444",3],[12,14,"above","#444",3],[13,14,"above","#444",3],[14,14,"above","#444",3]];
+// var fills = [[8,1,"below","white",1],[9,1,"below","#888",2],[7,2,"below","white",1],[8,2,"above","#888",2],[8,2,"below","white",1],[9,2,"below","#888",2],[7,3,"below","white",1],[8,3,"above","white",1],[8,3,"below","#444",3],[9,3,"above","#888",2],[9,3,"below","white",1],[10,3,"below","#888",2],[6,4,"below","white",1],[7,4,"above","white",1],[7,4,"below","#444",3],[8,4,"above","white",1],[9,4,"above","#888",2],[9,4,"below","white",1],[10,4,"below","#888",2],[6,5,"below","white",1],[7,5,"above","white",1],[7,5,"below","#444",3],[8,5,"above","#444",3],[9,5,"above","white",1],[10,5,"above","#888",2],[10,5,"below","white",1],[11,5,"below","#888",2],[5,6,"below","white",1],[6,6,"above","white",1],[6,6,"below","white",1],[7,6,"above","#444",3],[7,6,"below","#888",2],[9,6,"above","white",1],[10,6,"above","#888",2],[10,6,"below","white",1],[11,6,"below","#888",2],[5,7,"below","white",1],[6,7,"above","white",1],[6,7,"below","#444",3],[7,7,"above","#888",2],[7,7,"below","white",1],[8,7,"below","#888",2],[10,7,"above","white",1],[11,7,"above","#888",2],[11,7,"below","white",1],[12,7,"below","#888",2],[4,8,"below","white",1],[5,8,"above","white",1],[5,8,"below","#444",3],[6,8,"above","white",1],[7,8,"above","#888",2],[7,8,"below","white",1],[8,8,"below","#888",2],[9,8,"below","#888",2],[10,8,"above","white",1],[10,8,"below","#888",2],[11,8,"above","#888",2],[11,8,"below","#888",2],[12,8,"below","#888",2],[4,9,"below","white",1],[5,9,"above","white",1],[5,9,"below","#444",3],[6,9,"above","#444",3],[7,9,"above","white",1],[8,9,"above","#888",2],[8,9,"below","white",1],[9,9,"above","#888",2],[9,9,"below","#888",2],[10,9,"above","#888",2],[10,9,"below","#444",3],[11,9,"above","#888",2],[11,9,"below","#444",3],[12,9,"above","#888",2],[12,9,"below","white",1],[13,9,"below","#888",2],[3,10,"below","white",1],[4,10,"above","white",1],[4,10,"below","#444",3],[5,10,"above","#444",3],[7,10,"above","white",1],[8,10,"above","#888",2],[8,10,"below","white",1],[9,10,"above","#444",3],[9,10,"below","#888",2],[10,10,"above","#444",3],[11,10,"above","#444",3],[12,10,"above","#888",2],[12,10,"below","white",1],[13,10,"below","#888",2],[3,11,"below","white",1],[4,11,"above","white",1],[4,11,"below","#444",3],[5,11,"above","#444",3],[8,11,"above","white",1],[9,11,"above","#888",2],[9,11,"below","white",1],[10,11,"below","#888",2],[12,11,"above","white",1],[13,11,"above","#888",2],[13,11,"below","white",1],[14,11,"below","#888",2],[2,12,"below","white",1],[3,12,"above","white",1],[3,12,"below","#444",3],[4,12,"above","#444",3],[4,12,"below","#888",2],[5,12,"below","#888",2],[6,12,"below","#888",2],[7,12,"below","#888",2],[8,12,"above","white",1],[8,12,"below","#888",2],[9,12,"above","#888",2],[9,12,"below","#888",2],[10,12,"below","#888",2],[11,12,"below","#888",2],[12,12,"above","white",1],[12,12,"below","#888",2],[13,12,"above","#888",2],[13,12,"below","#888",2],[14,12,"below","#888",2],[3,13,"above","white",1],[3,13,"below","#444",3],[4,13,"above","#444",3],[4,13,"below","#444",3],[5,13,"above","#888",2],[5,13,"below","#444",3],[6,13,"above","#888",2],[6,13,"below","#444",3],[7,13,"above","#888",2],[7,13,"below","#444",3],[8,13,"above","#888",2],[8,13,"below","#444",3],[9,13,"above","#888",2],[9,13,"below","#444",3],[10,13,"above","#888",2],[10,13,"below","#444",3],[11,13,"above","#888",2],[11,13,"below","#444",3],[12,13,"above","#888",2],[12,13,"below","#444",3],[13,13,"above","#888",2],[13,13,"below","#444",3],[14,13,"above","#888",2],[14,13,"below","#444",3],[2,14,"above","white",1],[3,14,"above","#444",3],[4,14,"above","#444",3],[5,14,"above","#444",3],[6,14,"above","#444",3],[7,14,"above","#444",3],[8,14,"above","#444",3],[9,14,"above","#444",3],[10,14,"above","#444",3],[11,14,"above","#444",3],[12,14,"above","#444",3],[13,14,"above","#444",3],[14,14,"above","#444",3]];
+// small hyrule
+// var fills = [[6,5,"below","white",1],[7,5,"below","#888",2],[5,6,"below","white",1],[6,6,"above","#888",2],[6,6,"below","white",1],[7,6,"below","#888",2],[5,7,"below","white",1],[6,7,"above","white",1],[6,7,"below","#444",3],[7,7,"above","#888",2],[7,7,"below","white",1],[8,7,"below","#888",2],[4,8,"below","white",1],[5,8,"above","white",1],[5,8,"below","#444",3],[6,8,"above","white",1],[7,8,"above","#888",2],[7,8,"below","white",1],[8,8,"below","#888",2],[4,9,"below","white",1],[5,9,"above","white",1],[5,9,"below","white",1],[6,9,"above","#444",3],[6,9,"below","#888",2],[7,9,"above","white",1],[7,9,"below","#888",2],[8,9,"above","#888",2],[8,9,"below","#888",2],[9,9,"below","#888",2],[3,10,"below","white",1],[4,10,"above","white",1],[4,10,"below","#444",3],[5,10,"above","#888",2],[5,10,"below","white",1],[6,10,"above","#888",2],[6,10,"below","#888",2],[7,10,"above","#888",2],[7,10,"below","#444",3],[8,10,"above","#888",2],[8,10,"below","white",1],[9,10,"below","#888",2],[3,11,"below","white",1],[4,11,"above","white",1],[4,11,"below","#444",3],[5,11,"above","white",1],[6,11,"above","#888",2],[6,11,"below","white",1],[7,11,"above","#444",3],[7,11,"below","#888",2],[8,11,"above","#444",3],[9,11,"above","#888",2],[9,11,"below","white",1],[10,11,"below","#888",2],[2,12,"below","white",1],[3,12,"above","white",1],[3,12,"below","#444",3],[4,12,"above","#444",3],[4,12,"below","#888",2],[5,12,"above","white",1],[5,12,"below","#888",2],[6,12,"above","#888",2],[6,12,"below","#888",2],[7,12,"below","#888",2],[8,12,"above","white",1],[8,12,"below","#888",2],[9,12,"above","#888",2],[9,12,"below","#888",2],[10,12,"below","#888",2],[3,13,"above","white",1],[3,13,"below","#444",3],[4,13,"above","#444",3],[4,13,"below","#444",3],[5,13,"above","#888",2],[5,13,"below","#444",3],[6,13,"above","#888",2],[6,13,"below","#444",3],[7,13,"above","#888",2],[7,13,"below","#444",3],[8,13,"above","#888",2],[8,13,"below","#444",3],[9,13,"above","#888",2],[9,13,"below","#444",3],[10,13,"above","#888",2],[10,13,"below","#444",3],[2,14,"above","white",1],[3,14,"above","#444",3],[4,14,"above","#444",3],[5,14,"above","#444",3],[6,14,"above","#444",3],[7,14,"above","#444",3],[8,14,"above","#444",3],[9,14,"above","#444",3],[10,14,"above","#444",3]];
+// hyrule medium
+// var fills = [[6,4,"below","white",1],[7,4,"below","#888",2],[6,5,"below","white",1],[7,5,"above","#888",2],[7,5,"below","white",1],[8,5,"below","#888",2],[5,6,"below","white",1],[6,6,"above","white",1],[6,6,"below","#444",3],[7,6,"above","#888",2],[7,6,"below","white",1],[8,6,"below","#888",2],[5,7,"below","white",1],[6,7,"above","white",1],[6,7,"below","#444",3],[7,7,"above","white",1],[8,7,"above","#888",2],[8,7,"below","white",1],[9,7,"below","#888",2],[4,8,"below","white",1],[5,8,"above","white",1],[5,8,"below","white",1],[6,8,"above","#444",3],[6,8,"below","#888",2],[7,8,"above","white",1],[8,8,"above","#888",2],[8,8,"below","white",1],[9,8,"below","#888",2],[4,9,"below","white",1],[5,9,"above","white",1],[5,9,"below","#444",3],[6,9,"above","#888",2],[6,9,"below","white",1],[7,9,"below","#888",2],[8,9,"above","white",1],[8,9,"below","#888",2],[9,9,"above","#888",2],[9,9,"below","#888",2],[10,9,"below","#888",2],[3,10,"below","white",1],[4,10,"above","white",1],[4,10,"below","#444",3],[5,10,"above","white",1],[6,10,"above","#888",2],[6,10,"below","white",1],[7,10,"above","#888",2],[7,10,"below","#888",2],[8,10,"above","#888",2],[8,10,"below","#444",3],[9,10,"above","#888",2],[9,10,"below","white",1],[10,10,"below","#888",2],[3,11,"below","white",1],[4,11,"above","white",1],[4,11,"below","#444",3],[5,11,"above","#444",3],[6,11,"above","white",1],[7,11,"above","#888",2],[7,11,"below","white",1],[8,11,"above","#444",3],[8,11,"below","#888",2],[9,11,"above","#444",3],[10,11,"above","#888",2],[10,11,"below","white",1],[11,11,"below","#888",2],[2,12,"below","white",1],[3,12,"above","white",1],[3,12,"below","#444",3],[4,12,"above","#444",3],[4,12,"below","#888",2],[5,12,"below","#888",2],[6,12,"above","white",1],[6,12,"below","#888",2],[7,12,"above","#888",2],[7,12,"below","#888",2],[8,12,"below","#888",2],[9,12,"above","white",1],[9,12,"below","#888",2],[10,12,"above","#888",2],[10,12,"below","#888",2],[11,12,"below","#888",2],[3,13,"above","white",1],[3,13,"below","#444",3],[4,13,"above","#444",3],[4,13,"below","#444",3],[5,13,"above","#888",2],[5,13,"below","#444",3],[6,13,"above","#888",2],[6,13,"below","#444",3],[7,13,"above","#888",2],[7,13,"below","#444",3],[8,13,"above","#888",2],[8,13,"below","#444",3],[9,13,"above","#888",2],[9,13,"below","#444",3],[10,13,"above","#888",2],[10,13,"below","#444",3],[11,13,"above","#888",2],[11,13,"below","#444",3],[2,14,"above","white",1],[3,14,"above","#444",3],[4,14,"above","#444",3],[5,14,"above","#444",3],[6,14,"above","#444",3],[7,14,"above","#444",3],[8,14,"above","#444",3],[9,14,"above","#444",3],[10,14,"above","#444",3],[11,14,"above","#444",3]];
+// crossbar
+var fills = [[6,4,"below","white",1],[7,4,"below","#888",2],[6,5,"below","white",1],[7,5,"above","#888",2],[7,5,"below","white",1],[8,5,"below","#888",2],[5,6,"below","white",1],[6,6,"above","white",1],[6,6,"below","#444",3],[7,6,"above","#888",2],[7,6,"below","white",1],[8,6,"below","#888",2],[5,7,"below","white",1],[6,7,"above","white",1],[6,7,"below","#444",3],[7,7,"above","white",1],[8,7,"above","#888",2],[8,7,"below","white",1],[9,7,"below","#888",2],[4,8,"below","white",1],[5,8,"above","white",1],[5,8,"below","#444",3],[6,8,"above","#444",3],[7,8,"above","white",1],[8,8,"above","#888",2],[8,8,"below","white",1],[9,8,"below","#888",2],[4,9,"below","white",1],[5,9,"above","white",1],[5,9,"below","#444",3],[6,9,"above","#444",3],[6,9,"below","#888",2],[7,9,"below","#888",2],[8,9,"above","white",1],[8,9,"below","#888",2],[9,9,"above","#888",2],[9,9,"below","#888",2],[10,9,"below","#888",2],[3,10,"below","white",1],[4,10,"above","white",1],[4,10,"below","#444",3],[5,10,"above","#444",3],[5,10,"below","#444",3],[6,10,"above","#888",2],[6,10,"below","#444",3],[7,10,"above","#888",2],[7,10,"below","#444",3],[8,10,"above","#888",2],[8,10,"below","#444",3],[9,10,"above","#888",2],[9,10,"below","white",1],[10,10,"below","#888",2],[3,11,"below","white",1],[4,11,"above","white",1],[4,11,"below","#444",3],[5,11,"above","#444",3],[6,11,"above","#444",3],[7,11,"above","#444",3],[8,11,"above","#444",3],[9,11,"above","#444",3],[10,11,"above","#888",2],[10,11,"below","white",1],[11,11,"below","#888",2],[2,12,"below","white",1],[3,12,"above","white",1],[3,12,"below","#444",3],[4,12,"above","#444",3],[4,12,"below","#888",2],[5,12,"below","#888",2],[6,12,"below","#888",2],[7,12,"below","#888",2],[8,12,"below","#888",2],[9,12,"above","white",1],[9,12,"below","#888",2],[10,12,"above","#888",2],[10,12,"below","#888",2],[11,12,"below","#888",2],[3,13,"above","white",1],[3,13,"below","#444",3],[4,13,"above","#444",3],[4,13,"below","#444",3],[5,13,"above","#888",2],[5,13,"below","#444",3],[6,13,"above","#888",2],[6,13,"below","#444",3],[7,13,"above","#888",2],[7,13,"below","#444",3],[8,13,"above","#888",2],[8,13,"below","#444",3],[9,13,"above","#888",2],[9,13,"below","#444",3],[10,13,"above","#888",2],[10,13,"below","#444",3],[11,13,"above","#888",2],[11,13,"below","#444",3],[2,14,"above","white",1],[3,14,"above","#444",3],[4,14,"above","#444",3],[5,14,"above","#444",3],[6,14,"above","#444",3],[7,14,"above","#444",3],[8,14,"above","#444",3],[9,14,"above","#444",3],[10,14,"above","#444",3],[11,14,"above","#444",3]];
+
+
+fills = fills.map(function (d) {
+  return [d[0], d[1], d[2], d[3]];
+});
+
+var fillObj = {};
+
+fills.forEach(function (pt) {
+  var x = fillObj[pt[0]] || {};
+  fillObj[pt[0]] = x;
+  var y = x[pt[1]] || {};
+  x[pt[1]] = y;
+  y[pt[2] == 'above' ? 'above' : 'below'] = pt[3];
+});
+
+console.log(fillObj)
+
+
+var color;
+color = d3.scale.category10()
+    .domain(d3.range(n));
+color = function () { return 'white'; };
+
+
+var triangular = true;
+
+
+var nodes = d3.range(n).map(function(i) {
+  // var cx = (i % w) * wp;
+  // var cy = Math.floor(i / w) * hp;
+  var row = Math.floor(i / w);
+  var col = i % w;
+  var cx = (i % w) * wp;
+  cx -= wp;
+  var cy = Math.floor(i / w) * hp;
+  cy -= hp;
+  if (triangular && row % 2 == 0) {
+    cx += wp/2;
+  }
+  return {
+    radius: radius,
+    color: color(i),
+    x: cx,
+    y: cy,
+    cx: cx,
+    cy: cy,
+    row: row,
+    col: col,
+    getPoint: function () {
+      return this.distorted ? this.distorted : this;
+    },
+    getX: function () {
+      return Math.max(this.getPoint().x, 0.01);
+    },
+    getY: function () {
+      return Math.max(this.getPoint().y, 0.01);
+    }
+  };
+});
+
+var links = [];
+var shapes = [];
+
+var toLines = function (points) {
+  var lines = [];
+  for (var i = 0, n = points.length - 1; i < n; ++i) {
+    var line = {};
+    line.source = points[i];
+    line.target = points[i+1];
+    lines.push(line);
+  }
+  return lines;
+};
+
+var c = 0;
+d3.range(n).map(function(i) {
+  var j = i+1;
+  var link;
+
+  var row = Math.floor(i / w);
+  var col = i % w;
+  var color;
+  var rowOdd = row % 2 != 0;
+  var colOdd = col % 2 != 0;
+  if (rowOdd) {
+    color = colOdd ? 'orange' : 'purple';
+  }
+  else {
+    color = colOdd ? 'red' : 'blue';
+  }
+
+  // above
+  var above;
+  if (row > 0 && col > 0 && col < w-1) {
+    above = [i, i - w, i - w + (rowOdd ? -1 : 1), i];
+  }
+  // below
+  var below;
+  if (row < h-1 && col < w-1 && col > 0) {
+    below = [i, i + w, i + w + (rowOdd ? -1 : 1), i];
+  }
+
+  var oddRowColColor = colOdd ? 'red' : 'pink';
+  var evenRowColColor = colOdd ? 'orange' : 'yellow';
+  var color = rowOdd ? oddRowColColor : evenRowColColor;
+
+  var color = 'rgba(255,255,255,0.25)';
+  // var fill = 'rgba(255,255,255,0.25)';
+  var fill = 'rgba(0,0,0,0)'; // need transparent fill for mouse events
+
+  var shape = function (lines, rel) {
+    return {
+      lines: toLines(lines),
+      row: row,
+      col: col,
+      rel: rel,
+      fill: fill,
+      color: color
+    };
+  };
+
+  if (above) shapes.push(shape(above, 'above'));
+  if (below) shapes.push(shape(below, 'below'));
+
+  ++c;
+})
+.filter(function (e) { return e; })
+
+// console.log('shapes', shapes);
+
+
+shapes.forEach(function (d) {
+  if (fillObj[d.col]
+    && fillObj[d.col][d.row]
+    && fillObj[d.col][d.row][d.rel]) {
+    d.filled = true;
+    d.fillColor = fillObj[d.col][d.row][d.rel];
+    d.fillColorIndex = fillColors.indexOf(d.fillColor);
+  }
+});
+
+
+var root = {
+  fixed: true,
+  radius: 0
+};
+
+nodes.push(root);
+
+var myforce = {
+  alpha: 0.1,
+  decay: 0.001,
+  step: function (i) {
+    myforce.alpha -= myforce.decay;
+    myforce.alpha = Math.max(0, myforce.alpha);
+    tick({
+      alpha: myforce.alpha
+    });
+  },
+  resume: function (alpha) {
+    alpha = alpha || 0.1;
+    myforce.alpha = alpha;
+  }
+};
+
+// d3.timer(myforce.step);
+setInterval(myforce.step, 1000)
+
+// var force = d3.layout.force()ßß
+//     .nodes(nodes)
+//     // .links(links)
+//     .size([overwidth, overheight])
+//     .gravity(0)
+//     .charge(0.5)
+//     // .linkDistance(null)
+//     .on("tick", tick)
+
+// force.start();
+
+
+
+var svg = d3.select("body").append("svg")
+    // .attr("width", width)
+    // .attr("height", height)
+    .attr("width", '100%')
+    .attr("height", '100%')
+    .attr("class", "my-d3-force-grid")
+    .attr('viewBox', '0 0 ' + width + ' ' + height)
+    .attr('preserveAspectRatio', 'xMinYMin meet')
+
+var node = svg.selectAll(".node")
+    .data(nodes.slice(0, -1))
+  .enter().append("circle")
+    .attr('class', 'node')
+    .attr("r", function(d) { return d.radius; })
+    .style("fill", function(d) { return d.color; })
+    // .call(force.drag);
+
+// var link = svg.selectAll('.link')
+//     .data(links)
+//   .enter().append('line')
+//     .attr('class', 'link')
+//     // .style("stroke", function(d) { return 'white'; })
+//     .style("stroke", function(d) { return 'rgba(255,255,255,0.5)'; })
+//     .style("stroke-width", function(d) { return 1; })
+//     .attr('x1', function (d) { return nodes[d.source].x; })
+//     .attr('y1', function (d) { return nodes[d.source].y; })
+//     .attr('x2', function (d) { return nodes[d.target].x; })
+//     .attr('y2', function (d) { return nodes[d.target].y; })
+
+var drawShapes = function (shapes) {
+  return shapes
+    .attr('points', function (d) {
+      var p = d.lines.map(function (p) {
+        var src = nodes[p.source];
+        var dst = nodes[p.target];
+        return src.getX() + ',' + src.getY()
+          + ' ' + dst.getX() + ',' + dst.getY();
+      }).join(' ');
+      return p;
+    })
+    .style('stroke-width', function (d) { return 1; })
+    // .style('fill', function (d) { return d.color; })
+    // .style('fill', 'none')
+    // .style('fill', function (d) { return d.fill; })
+    // .style('fill', function (d) { return d.over ? 'white' : d.fill; })
+    .style('fill', function (d) {
+      var fill;
+      // else {
+        // fill = d.over ? 'white' : d.filled ? 'white' : 'none';
+        fill = d.filled ? d.fillColor || 'white' : d.fill;
+      // }
+      return fill;
+    })
+    .style('stroke', function (d) { return d.color || 'red'; })
+}
+
+var shape = svg.selectAll('.shape')
+    .data(shapes)
+  .enter().append('polyline')
+    .call(drawShapes)
+
+var fisheye = d3.fisheye
+  .circular()
+  // .scale()
+  // .radius(wp*1.5)
+  // .radius(wp*3)
+  .radius(0)
+  // .radius(100)
+  // .radius(150)
+  // .distortion(-3);
+  // .distortion(-1.5)
+  // .distortion(-1.5)
+  .distortion(0)
+  // .distortion(-2.5)
+  // .distortion(-2);
+  // .distortion(-1.5);
+  // .distortion(-1);
+
+svg.on('mouseenter', function () {
+  mouseover = true;
+  myforce.resume();
+});
+
+svg.on('mousemove', function () {
+  mouse = d3.mouse(this);
+  myforce.resume();
+});
+
+svg.on('mouseleave', function () {
+  mouseover = false;
+  node
+    .attr('cx', function (d) { return d.x; })
+    .attr('cy', function (d) { return d.y; })
+  myforce.resume();
+});
+
+// shape.on('mouseenter', function (d) {
+//   d.over = true;
+// });
+
+// shape.on('mouseleave', function (d) {
+//   d.over = false;
+// });
+
+shape.on('click', function (d) {
+  d.filled = true;
+  if (! d.fillColorIndex) d.fillColorIndex = 0;
+  d.fillColorIndex = (d.fillColorIndex + 1) % fillColors.length;
+  d.fillColor = fillColors[d.fillColorIndex];
+});
+
+
+var jitter = function (node, factor) {
+  node
+    .each(function (d) {
+      d.distorted = {
+        x: d.distorted.x + (Math.random() - 0.5) * factor,
+        y: d.distorted.y + (Math.random() - 0.5) * factor
+      };
+    })
+};
+
+
+function tick(e) {
+  node
+    .each(function (d) {
+      // if (fisheyeing) {
+      //   d.fisheye = fisheye(d);
+      //   d.distorted = {
+      //     x: d.fisheye.x,
+      //     y: d.fisheye.y
+      //   };
+      // }
+      // else {
+      //   // d.distorted = d.distorted || {
+      //   //   x: d.fisheye.x,
+      //   //   y: d.fisheye.y
+      //   // };
+      //   // approachPoint(d.distorted, {x: d.cx, y: d.cy}, 0.1)
+      // }
+    })
+    // .call(jitter, 5)
+    // .each(gravity(.2 * e.alpha))
+    // .each(collide(.5))
+    .each(function (d) {
+      if (mouseover) {
+        attract({
+          x: mouse ? mouse[0] : undefined,
+          y: mouse ? mouse[1] : undefined
+        }, {
+          alpha: e.alpha,
+          radius: 150,
+          stop: 50
+        })(d);
+      }
+    })
+    .each(gravity(e.alpha))
+    .attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; })
+
+  shape.call(drawShapes);
+
+  // resume force each tick so the simulation never stops
+  // force.resume()
+
+  // link
+  //   .attr('x1', function (d) {
+  //     var n = nodes[d.source], d = n.distorted; return d ? d.x : null;
+  //   })
+  //   .attr('y1', function (d) {
+  //     var n = nodes[d.source], d = n.distorted; return d ? d.y : null;
+  //   })
+  //   .attr('x2', function (d) {
+  //     var n = nodes[d.target], d = n.distorted; return d ? d.x : null;
+  //   })
+  //   .attr('y2', function (d) {
+  //     var n = nodes[d.target], d = n.distorted; return d ? d.y : null;
+  //   })
+    // .attr('x1', function (d) { return nodes[d.source].x; })
+    // .attr('y1', function (d) { return nodes[d.source].y; })
+    // .attr('x2', function (d) { return nodes[d.target].x; })
+    // .attr('y2', function (d) { return nodes[d.target].y; })
+};
+
+function attract(to, opts) {
+  opts = opts || {};
+  if (!to || !to.x || !to.y) return noop;
+  return function (d) {
+    approachPoint(d, to, opts);
+  };
+};
+
+function gravity(alpha) {
+  return function(d) {
+    approachPoint(d, {x: d.cx, y: d.cy}, {
+      alpha: alpha
+    });
+  };
+};
+
+function approach(from, to, opts) {
+  if (! opts.stop) opts.stop = 0;
+  if (! opts.radius) opts.radius = Infinity;
+  var diff = to - from;
+  // var abs = Math.abs(diff);
+  // if (abs > opts.radius) {
+  //   return 0;
+  // }
+  // if (abs < opts.stop) {
+  //   return 0;
+  // }
+  return diff * opts.alpha;
+};
+
+function approachPoint(from, to, opts) {
+  if (! opts.stop) opts.stop = 0;
+  if (! opts.radius) opts.radius = Infinity;
+  var dx = to.x - from.x;
+  var dy = to.y - from.y;
+  var dd = Math.sqrt(dx*dx, dy*dy);
+  var abs = Math.abs(dd);
+  if (abs > opts.radius) {
+    return;
+  }
+  if (abs < opts.stop) {
+    return;
+  }
+  from.x += approach(from.x, to.x, opts);
+  from.y += approach(from.y, to.y, opts);
+}
+
+
+// Resolve collisions between nodes.
+function collide(alpha) {
+  var quadtree = d3.geom.quadtree(nodes);
+  return function(d) {
+    // Radius determines whether we'll recurse.
+    var r = d.radius + maxRadius + padding,
+        nx1 = d.x - r,
+        nx2 = d.x + r,
+        ny1 = d.y - r,
+        ny2 = d.y + r;
+    quadtree.visit(function(quad, x1, y1, x2, y2) {
+      // Operate only if quad point is not current point.
+      if (quad.point && (quad.point !== d)) {
+        // Distance between quad point and current point
+        var x = d.x - quad.point.x,
+            y = d.y - quad.point.y,
+            // Diagonal distance (Pythagorean)
+            l = Math.sqrt(x * x + y * y),
+            // Minimum distance between center points
+            r = d.radius + quad.point.radius;
+
+        // if (l < wp) {
+        //   return true;
+        // }
+
+        // If minimum distance is less than distance:
+        if (l < r) {
+          // console.log('colliding')
+          // How close are we? From 0-1 * alpha.
+          l = (l - r) / l * alpha;
+          // Move point further away, the closer we are.
+          d.x -= x *= l;
+          d.y -= y *= l;
+          // Adjust the quad point by how much we moved the point.
+          // TODO: Why?
+          quad.point.x += x;
+          quad.point.y += y;
+        }
+      }
+      // Stop recursion (return true) on current branch, if
+      // current quad corners don't bound current reasonable radius.
+      return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+    });
+  };
+};
+
+</script>
