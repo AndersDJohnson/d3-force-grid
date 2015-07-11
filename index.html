@@ -22,10 +22,10 @@ var height = 300;
 // var w = 20;
 // var h = 6;
 // var w = 12;
-// var h = 8;
-// var w = 12;
-var h = 6;
-var w = 8;
+var h = 8;
+var w = 12;
+// var h = 6;
+// var w = 8;
 var n = h * w; // total number of nodes
 var hp = height / (h-1);
 var wp = width / (w-1);
@@ -160,7 +160,8 @@ link = link.data(links)
 var fisheye = d3.fisheye
   .circular()
   // .scale()
-  .radius(100)
+  .radius(wp*1.5)
+  // .radius(100)
   // .radius(150)
   // .distortion(-3);
   .distortion(-2.5);
