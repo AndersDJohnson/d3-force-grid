@@ -7,7 +7,7 @@ circle {
 }
 
 .my-d3-force-grid {
-  background: black;
+  background: green;
 }
 
 </style>
@@ -22,17 +22,20 @@ var height = 300;
 // var w = 20;
 // var h = 6;
 // var w = 12;
-var h = 8;
-var w = 12;
 // var h = 6;
 // var w = 8;
+var h = 8;
+var w = 12;
+// var h = 20;
+// var w = 25;
 
 var hp = height / (h-1);
 var wp = width / (w-1);
 var padding = wp; // separation between nodes
 // var radius = 8;
 // var radius = 3;
-var radius = 2;
+// var radius = 2;
+var radius = 1;
 var maxRadius = radius;
 
 var overwidth = width + 2 * wp;
@@ -73,53 +76,84 @@ var nodes = d3.range(n).map(function(i) {
     x: cx,
     y: cy,
     cx: cx,
-    cy: cy
+    cy: cy,
+    getPoint: function () {
+      return this.distorted ? this.distorted : this;
+    },
+    getX: function () {
+      return this.getPoint().x;
+    },
+    getY: function () {
+      return this.getPoint().y;
+    }
   };
 });
 
 var links = [];
+var shapes = [];
 
-// squares
+var toLines = function (points) {
+  var lines = [];
+  for (var i = 0, n = points.length - 1; i < n; ++i) {
+    var line = {};
+    line.source = points[i];
+    line.target = points[i+1];
+    lines.push(line);
+  }
+  return lines;
+};
+
+var c = 0;
 d3.range(n).map(function(i) {
   var j = i+1;
-  var iw = i % w;
-  var jw = j % w;
-  if (iw < jw) {
-    links.push({
-      source: i,
-      target: j
-    });
+  var link;
+
+  var row = Math.floor(i / w);
+  var col = i % w;
+  var color;
+  var rowOdd = row % 2 != 0;
+  var colOdd = col % 2 != 0;
+  if (rowOdd) {
+    color = colOdd ? 'orange' : 'purple';
   }
-  var jh = i + w;
-  if (jh < n) {
-    links.push({
-      source: i,
-      target: jh
-    });
+  else {
+    color = colOdd ? 'red' : 'blue';
   }
-  if (triangular) {
-    var row = Math.floor(i / w);
-    if (row % 2 == 0) {
-      var jh = i + w + 1;
-      if (jh < n && jh % w > iw % w) {
-        links.push({
-          source: i,
-          target: jh
-        });
-      }
-    }
-    else {
-      var jh = i + w - 1;
-      if (jh < n && jh % w < iw % w) {
-        links.push({
-          source: i,
-          target: jh
-        });
-      }
-    }
+
+  // above
+  var above;
+  if (row > 0 && col > 0 && col < w-1) {
+    above = [i, i - w, i - w + (rowOdd ? -1 : 1), i];
   }
+  // below
+  var below;
+  if (row < h-1 && col < w-1 && col > 0) {
+    below = [i, i + w, i + w + (rowOdd ? -1 : 1), i];
+  }
+
+  var oddRowColColor = colOdd ? 'red' : 'pink';
+  var evenRowColColor = colOdd ? 'orange' : 'yellow';
+  var color = rowOdd ? oddRowColColor : evenRowColColor;
+
+  var color = 'rgba(255,255,255,0.5)';
+  var fill = 'rgba(255,255,255,0.25)';
+
+  var shape = function (lines) {
+    return {
+      lines: toLines(lines),
+      fill: fill,
+      color: color
+    };
+  };
+
+  if (above) shapes.push(shape(above));
+  if (below) shapes.push(shape(below));
+
+  ++c;
 })
 .filter(function (e) { return e; })
+
+console.log('shapes', shapes);
 
 var root = {
   fixed: true,
@@ -156,18 +190,41 @@ var node = svg.selectAll(".node")
     .style("fill", function(d) { return d.color; })
     .call(force.drag);
 
-var link = svg.selectAll('link');
+// var link = svg.selectAll('.link')
+//     .data(links)
+//   .enter().append('line')
+//     .attr('class', 'link')
+//     // .style("stroke", function(d) { return 'white'; })
+//     .style("stroke", function(d) { return 'rgba(255,255,255,0.5)'; })
+//     .style("stroke-width", function(d) { return 1; })
+//     .attr('x1', function (d) { return nodes[d.source].x; })
+//     .attr('y1', function (d) { return nodes[d.source].y; })
+//     .attr('x2', function (d) { return nodes[d.target].x; })
+//     .attr('y2', function (d) { return nodes[d.target].y; })
 
-link = link.data(links)
-  .enter().append('line')
-    .attr('class', 'link')
-    // .style("stroke", function(d) { return 'white'; })
-    .style("stroke", function(d) { return 'rgba(255,255,255,0.5)'; })
-    .style("stroke-width", function(d) { return 1; })
-    .attr('x1', function (d) { return nodes[d.source].x; })
-    .attr('y1', function (d) { return nodes[d.source].y; })
-    .attr('x2', function (d) { return nodes[d.target].x; })
-    .attr('y2', function (d) { return nodes[d.target].y; })
+var drawShapes = function (shapes) {
+  return shapes
+    .attr('points', function (d) {
+      var p = d.lines.map(function (p) {
+        var src = nodes[p.source];
+        var dst = nodes[p.target];
+        return src.getX() + ',' + src.getY()
+          + ' ' + dst.getX() + ',' + dst.getY();
+      }).join(' ');
+      return p;
+    })
+    .style('stroke-width', function (d) { return 1; })
+    // .style('fill', function (d) { return d.color; })
+    // .style('fill', 'none')
+    // .style('fill', function (d) { return d.fill; })
+    .style('fill', function (d) { return d.over ? 'white' : d.fill; })
+    .style('stroke', function (d) { return d.color || 'red'; })
+}
+
+var shape = svg.selectAll('.shape')
+    .data(shapes)
+  .enter().append('polyline')
+    .call(drawShapes)
 
 var fisheye = d3.fisheye
   .circular()
@@ -197,6 +254,14 @@ svg.on('mouseleave', function () {
   force.resume();
 });
 
+shape.on('mouseenter', function (d) {
+  d.over = true;
+});
+
+shape.on('mouseleave', function (d) {
+  d.over = false;
+});
+
 function tick(e) {
   node
     .each(function (d) {
@@ -220,19 +285,21 @@ function tick(e) {
     .attr("cx", function(d) { return d.distorted.x; })
     .attr("cy", function(d) { return d.distorted.y; })
 
-  link
-    .attr('x1', function (d) {
-      var n = nodes[d.source], d = n.distorted; return d ? d.x : null;
-    })
-    .attr('y1', function (d) {
-      var n = nodes[d.source], d = n.distorted; return d ? d.y : null;
-    })
-    .attr('x2', function (d) {
-      var n = nodes[d.target], d = n.distorted; return d ? d.x : null;
-    })
-    .attr('y2', function (d) {
-      var n = nodes[d.target], d = n.distorted; return d ? d.y : null;
-    })
+  shape.call(drawShapes);
+
+  // link
+  //   .attr('x1', function (d) {
+  //     var n = nodes[d.source], d = n.distorted; return d ? d.x : null;
+  //   })
+  //   .attr('y1', function (d) {
+  //     var n = nodes[d.source], d = n.distorted; return d ? d.y : null;
+  //   })
+  //   .attr('x2', function (d) {
+  //     var n = nodes[d.target], d = n.distorted; return d ? d.x : null;
+  //   })
+  //   .attr('y2', function (d) {
+  //     var n = nodes[d.target], d = n.distorted; return d ? d.y : null;
+  //   })
     // .attr('x1', function (d) { return nodes[d.source].x; })
     // .attr('y1', function (d) { return nodes[d.source].y; })
     // .attr('x2', function (d) { return nodes[d.target].x; })
