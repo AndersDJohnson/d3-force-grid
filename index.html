@@ -80,8 +80,6 @@ fills.forEach(function (pt) {
   y[pt[2] == 'above' ? 'above' : 'below'] = pt[3];
 });
 
-console.log(fillObj)
-
 
 var color;
 color = d3.scale.category10()
@@ -171,9 +169,13 @@ d3.range(n).map(function(i) {
   var evenRowColColor = colOdd ? 'orange' : 'yellow';
   var color = rowOdd ? oddRowColColor : evenRowColColor;
 
-  var color = 'rgba(255,255,255,0.25)';
+  var transparent = 'rgba(0,0,0,0)';
+
+  var color;
+  color = 'rgba(255,255,255,0.15)';
+  // color = transparent;
   // var fill = 'rgba(255,255,255,0.25)';
-  var fill = 'rgba(0,0,0,0)'; // need transparent fill for mouse events
+  var fill = transparent; // need transparent fill for mouse events
 
   var shape = function (lines, rel) {
     return {
@@ -276,6 +278,7 @@ var drawShapes = function (shapes) {
       return p;
     })
     .style('stroke-width', function (d) { return 1; })
+    // .style('stroke-width', function (d) { return 0; })
     // .style('fill', function (d) { return d.color; })
     // .style('fill', 'none')
     // .style('fill', function (d) { return d.fill; })
@@ -319,9 +322,9 @@ svg.on('mousemove', function () {
 
 svg.on('mouseleave', function () {
   fisheyeing = false;
-  node
-    .attr('cx', function (d) { return d.x; })
-    .attr('cy', function (d) { return d.y; })
+  // node
+  //   .attr('cx', function (d) { return d.x; })
+  //   .attr('cy', function (d) { return d.y; })
   // force.resume();
 });
 
@@ -340,26 +343,47 @@ shape.on('click', function (d) {
   d.fillColor = fillColors[d.fillColorIndex];
 });
 
+var jitterBy = 2;
+
 function tick(e) {
   node
     .each(function (d) {
+      d.distorted = d.distorted || {
+        x: d.x,
+        y: d.y
+      };
       if (fisheyeing) {
         d.fisheye = fisheye(d);
-        d.distorted = {
+        // d.distorted = {
+        //   x: d.fisheye.x,
+        //   y: d.fisheye.y
+        // };
+
+        approachPoint(d.distorted, {
           x: d.fisheye.x,
           y: d.fisheye.y
-        };
+        }, 0.3);
+
+        jitterer(jitterBy)(d);
       }
       else {
-        d.distorted = d.distorted || {
-          x: d.fisheye.x,
-          y: d.fisheye.y
-        };
-        approachPoint(d.distorted, {x: d.cx, y: d.cy}, 0.1)
+        // d.distorted = {
+        //   x: d.cx,
+        //   y: d.cy
+        // };
+
+      //   console.log(d.distorted);
+        approachPoint(d.distorted, {
+          x: d.cx,
+          y: d.cy
+        }, 0.3);
+
+        jitterer(jitterBy)(d);
       }
     })
-    .each(gravity(.2 * e.alpha))
-    .each(collide(.5))
+    // .each(jitterer(2))
+    // .each(gravity(.2 * e.alpha))
+    // .each(collide(.5))
     .attr("cx", function(d) { return d.distorted.x; })
     .attr("cy", function(d) { return d.distorted.y; })
 
@@ -385,6 +409,17 @@ function tick(e) {
     // .attr('y1', function (d) { return nodes[d.source].y; })
     // .attr('x2', function (d) { return nodes[d.target].x; })
     // .attr('y2', function (d) { return nodes[d.target].y; })
+};
+
+function jitter(v, alpha) {
+  return v + (Math.random() - 0.5) * alpha;
+}
+
+function jitterer(alpha) {
+  return function (d) {
+    d.distorted.x = jitter(d.distorted.x, alpha);
+    d.distorted.y = jitter(d.distorted.y, alpha);
+  };
 };
 
 // Move nodes toward local focal point.
