@@ -26,7 +26,7 @@ var h = 8;
 var w = 12;
 // var h = 6;
 // var w = 8;
-var n = h * w; // total number of nodes
+
 var hp = height / (h-1);
 var wp = width / (w-1);
 var padding = wp; // separation between nodes
@@ -34,6 +34,14 @@ var padding = wp; // separation between nodes
 // var radius = 3;
 var radius = 2;
 var maxRadius = radius;
+
+var overwidth = width + 2 * wp;
+var overheight = height + 2 * hp;
+
+h += 2;
+w += 2;
+
+var n = h * w; // total number of nodes
 
 var fisheyeing = true;
 var lastFocus = null;
@@ -49,8 +57,12 @@ var triangular = true;
 
 
 var nodes = d3.range(n).map(function(i) {
+  // var cx = (i % w) * wp;
+  // var cy = Math.floor(i / w) * hp;
   var cx = (i % w) * wp;
+  cx -= wp;
   var cy = Math.floor(i / w) * hp;
+  cy -= hp;
   var row = Math.floor(i / w);
   if (triangular && row % 2 == 0) {
     cx += wp/2;
@@ -119,7 +131,7 @@ nodes.push(root);
 var force = d3.layout.force()
     .nodes(nodes)
     // .links(links)
-    .size([width, height])
+    .size([overwidth, overheight])
     .gravity(0)
     .charge(0.5)
     // .linkDistance(null)
