@@ -7,7 +7,7 @@ circle {
 }
 
 .my-d3-force-grid {
-  background: green;
+  background: black;
 }
 
 </style>
@@ -24,10 +24,10 @@ var height = 300;
 // var w = 12;
 // var h = 6;
 // var w = 8;
-var h = 8;
-var w = 12;
-// var h = 20;
-// var w = 25;
+// var h = 8;
+// var w = 12;
+var h = 16;
+var w = 22;
 
 var hp = height / (h-1);
 var wp = width / (w-1);
@@ -50,6 +50,26 @@ var fisheyeing = true;
 var lastFocus = null;
 
 
+// var fills = [[8,4,"below"],[10,4,"below"],[8,5,"below"],[9,5,"below"],[10,5,"above"],[11,5,"below"],[7,6,"below"],[8,6,"above"],[9,6,"below"],[10,6,"above"],[11,6,"below"],[7,7,"below"],[8,7,"above"],[9,7,"above"],[10,7,"below"],[11,7,"above"],[12,7,"below"],[6,8,"below"],[7,8,"above"],[8,8,"below"],[9,8,"above"],[10,8,"below"],[11,8,"above"],[12,8,"below"],[6,9,"below"],[7,9,"above"],[8,9,"below"],[9,9,"below"],[10,9,"above"],[11,9,"below"],[12,9,"above"],[13,9,"below"],[1,10,"below"],[5,10,"below"],[6,10,"above"],[8,10,"above"],[10,10,"above"],[12,10,"above"],[13,10,"below"],[2,11,"above"],[6,11,"above"],[7,11,"below"],[8,11,"below"],[9,11,"below"],[10,11,"below"],[11,11,"below"],[12,11,"below"],[13,11,"above"],[13,11,"below"],[5,12,"above"],[7,12,"above"],[8,12,"above"],[9,12,"above"],[10,12,"above"],[11,12,"above"],[12,12,"above"],[13,12,"above"]];
+// var fills = [[9,1,"below"],[11,1,"below"],[12,1,"below"],[8,2,"below"],[9,2,"below"],[10,2,"above"],[11,2,"above"],[11,2,"below"],[12,2,"below"],[8,3,"below"],[9,3,"above"],[9,3,"below"],[10,3,"below"],[11,3,"above"],[12,3,"above"],[12,3,"below"],[13,3,"below"],[7,4,"below"],[8,4,"above"],[8,4,"below"],[9,4,"above"],[9,4,"below"],[10,4,"below"],[11,4,"above"],[12,4,"above"],[12,4,"below"],[13,4,"below"],[7,5,"below"],[8,5,"above"],[8,5,"below"],[9,5,"above"],[10,5,"above"],[10,5,"below"],[11,5,"below"],[12,5,"above"],[13,5,"above"],[13,5,"below"],[14,5,"below"],[6,6,"below"],[7,6,"above"],[7,6,"below"],[8,6,"above"],[9,6,"above"],[10,6,"above"],[10,6,"below"],[11,6,"below"],[12,6,"above"],[13,6,"above"],[13,6,"below"],[14,6,"below"],[6,7,"below"],[7,7,"above"],[7,7,"below"],[8,7,"above"],[9,7,"below"],[10,7,"above"],[11,7,"above"],[11,7,"below"],[12,7,"below"],[13,7,"above"],[14,7,"above"],[14,7,"below"],[15,7,"below"],[5,8,"below"],[6,8,"above"],[6,8,"below"],[7,8,"above"],[8,8,"below"],[9,8,"below"],[10,8,"above"],[11,8,"above"],[11,8,"below"],[12,8,"below"],[13,8,"above"],[14,8,"above"],[14,8,"below"],[15,8,"below"],[5,9,"below"],[6,9,"above"],[6,9,"below"],[7,9,"above"],[8,9,"below"],[9,9,"above"],[9,9,"below"],[10,9,"below"],[11,9,"above"],[12,9,"above"],[12,9,"below"],[13,9,"below"],[14,9,"above"],[15,9,"above"],[15,9,"below"],[16,9,"below"],[4,10,"below"],[5,10,"above"],[5,10,"below"],[6,10,"above"],[8,10,"above"],[9,10,"above"],[11,10,"above"],[12,10,"above"],[14,10,"above"],[15,10,"above"],[15,10,"below"],[16,10,"below"],[5,11,"above"],[5,11,"below"],[6,11,"above"],[7,11,"below"],[8,11,"below"],[9,11,"below"],[10,11,"below"],[11,11,"below"],[12,11,"below"],[13,11,"below"],[14,11,"below"],[15,11,"above"],[15,11,"below"],[16,11,"above"],[16,11,"below"],[4,12,"above"],[5,12,"above"],[6,12,"below"],[7,12,"above"],[7,12,"below"],[8,12,"above"],[8,12,"below"],[9,12,"above"],[9,12,"below"],[10,12,"above"],[10,12,"below"],[11,12,"above"],[11,12,"below"],[12,12,"above"],[12,12,"below"],[13,12,"above"],[13,12,"below"],[14,12,"above"],[14,12,"below"],[15,12,"above"],[15,12,"below"],[16,12,"above"],[5,13,"above"],[7,13,"above"],[8,13,"above"],[9,13,"above"],[10,13,"above"],[11,13,"above"],[12,13,"above"],[13,13,"above"],[14,13,"above"],[15,13,"above"],[16,13,"above"]];
+var fills = [[7,1,"below"],[9,1,"below"],[10,1,"below"],[6,2,"below"],[7,2,"below"],[8,2,"above"],[9,2,"above"],[9,2,"below"],[10,2,"below"],[6,3,"below"],[7,3,"above"],[7,3,"below"],[8,3,"below"],[9,3,"above"],[10,3,"above"],[10,3,"below"],[11,3,"below"],[5,4,"below"],[6,4,"above"],[6,4,"below"],[7,4,"above"],[7,4,"below"],[8,4,"below"],[9,4,"above"],[10,4,"above"],[10,4,"below"],[11,4,"below"],[5,5,"below"],[6,5,"above"],[6,5,"below"],[7,5,"above"],[8,5,"above"],[8,5,"below"],[9,5,"below"],[10,5,"above"],[11,5,"above"],[11,5,"below"],[12,5,"below"],[4,6,"below"],[5,6,"above"],[5,6,"below"],[6,6,"above"],[7,6,"above"],[8,6,"above"],[8,6,"below"],[9,6,"below"],[10,6,"above"],[11,6,"above"],[11,6,"below"],[12,6,"below"],[4,7,"below"],[5,7,"above"],[5,7,"below"],[6,7,"above"],[7,7,"below"],[8,7,"above"],[9,7,"above"],[9,7,"below"],[10,7,"below"],[11,7,"above"],[12,7,"above"],[12,7,"below"],[13,7,"below"],[3,8,"below"],[4,8,"above"],[4,8,"below"],[5,8,"above"],[6,8,"below"],[7,8,"below"],[8,8,"above"],[9,8,"above"],[9,8,"below"],[10,8,"below"],[11,8,"above"],[12,8,"above"],[12,8,"below"],[13,8,"below"],[3,9,"below"],[4,9,"above"],[4,9,"below"],[5,9,"above"],[6,9,"below"],[7,9,"above"],[7,9,"below"],[8,9,"below"],[9,9,"above"],[10,9,"above"],[10,9,"below"],[11,9,"below"],[12,9,"above"],[13,9,"above"],[13,9,"below"],[14,9,"below"],[2,10,"below"],[3,10,"above"],[3,10,"below"],[4,10,"above"],[6,10,"above"],[7,10,"above"],[9,10,"above"],[10,10,"above"],[12,10,"above"],[13,10,"above"],[13,10,"below"],[14,10,"below"],[3,11,"above"],[3,11,"below"],[4,11,"above"],[5,11,"below"],[6,11,"below"],[7,11,"below"],[8,11,"below"],[9,11,"below"],[10,11,"below"],[11,11,"below"],[12,11,"below"],[13,11,"above"],[13,11,"below"],[14,11,"above"],[14,11,"below"],[2,12,"above"],[3,12,"above"],[4,12,"below"],[5,12,"above"],[5,12,"below"],[6,12,"above"],[6,12,"below"],[7,12,"above"],[7,12,"below"],[8,12,"above"],[8,12,"below"],[9,12,"above"],[9,12,"below"],[10,12,"above"],[10,12,"below"],[11,12,"above"],[11,12,"below"],[12,12,"above"],[12,12,"below"],[13,12,"above"],[13,12,"below"],[14,12,"above"],[3,13,"above"],[5,13,"above"],[6,13,"above"],[7,13,"above"],[8,13,"above"],[9,13,"above"],[10,13,"above"],[11,13,"above"],[12,13,"above"],[13,13,"above"],[14,13,"above"]];
+// var fills = 
+
+fills = fills.map(function (d) {
+  return [d[0], d[1]+2, d[2]];
+});
+
+var fillObj = {};
+
+fills.forEach(function (pt) {
+  var x = fillObj[pt[0]] || {};
+  fillObj[pt[0]] = x;
+  var y = x[pt[1]] || {};
+  x[pt[1]] = y;
+  y[pt[2] == 'above' ? 'above' : 'below'] = true;
+});
+
+
 var color;
 color = d3.scale.category10()
     .domain(d3.range(n));
@@ -62,11 +82,12 @@ var triangular = true;
 var nodes = d3.range(n).map(function(i) {
   // var cx = (i % w) * wp;
   // var cy = Math.floor(i / w) * hp;
+  var row = Math.floor(i / w);
+  var col = i % w;
   var cx = (i % w) * wp;
   cx -= wp;
   var cy = Math.floor(i / w) * hp;
   cy -= hp;
-  var row = Math.floor(i / w);
   if (triangular && row % 2 == 0) {
     cx += wp/2;
   }
@@ -77,6 +98,8 @@ var nodes = d3.range(n).map(function(i) {
     y: cy,
     cx: cx,
     cy: cy,
+    row: row,
+    col: col,
     getPoint: function () {
       return this.distorted ? this.distorted : this;
     },
@@ -136,24 +159,38 @@ d3.range(n).map(function(i) {
   var color = rowOdd ? oddRowColColor : evenRowColColor;
 
   var color = 'rgba(255,255,255,0.5)';
-  var fill = 'rgba(255,255,255,0.25)';
+  // var fill = 'rgba(255,255,255,0.25)';
+  var fill = 'rgba(0,0,0,0)'; // need transparent fill for mouse events
 
-  var shape = function (lines) {
+  var shape = function (lines, rel) {
     return {
       lines: toLines(lines),
+      row: row,
+      col: col,
+      rel: rel,
       fill: fill,
       color: color
     };
   };
 
-  if (above) shapes.push(shape(above));
-  if (below) shapes.push(shape(below));
+  if (above) shapes.push(shape(above, 'above'));
+  if (below) shapes.push(shape(below, 'below'));
 
   ++c;
 })
 .filter(function (e) { return e; })
 
-console.log('shapes', shapes);
+// console.log('shapes', shapes);
+
+
+shapes.forEach(function (d) {
+  if (fillObj[d.col]
+    && fillObj[d.col][d.row]
+    && fillObj[d.col][d.row][d.rel]) {
+    d.filled = true;
+  }
+});
+
 
 var root = {
   fixed: true,
@@ -217,7 +254,15 @@ var drawShapes = function (shapes) {
     // .style('fill', function (d) { return d.color; })
     // .style('fill', 'none')
     // .style('fill', function (d) { return d.fill; })
-    .style('fill', function (d) { return d.over ? 'white' : d.fill; })
+    // .style('fill', function (d) { return d.over ? 'white' : d.fill; })
+    .style('fill', function (d) {
+      var fill;
+      // else {
+        // fill = d.over ? 'white' : d.filled ? 'white' : 'none';
+        fill = d.filled ? 'white' : d.fill;
+      // }
+      return fill;
+    })
     .style('stroke', function (d) { return d.color || 'red'; })
 }
 
@@ -229,11 +274,13 @@ var shape = svg.selectAll('.shape')
 var fisheye = d3.fisheye
   .circular()
   // .scale()
-  .radius(wp*1.5)
+  // .radius(wp*1.5)
+  .radius(wp*3)
   // .radius(100)
   // .radius(150)
   // .distortion(-3);
-  .distortion(-2.5);
+  .distortion(-1.5)
+  // .distortion(-2.5)
   // .distortion(-2);
   // .distortion(-1.5);
   // .distortion(-1);
@@ -254,12 +301,16 @@ svg.on('mouseleave', function () {
   force.resume();
 });
 
-shape.on('mouseenter', function (d) {
-  d.over = true;
-});
+// shape.on('mouseenter', function (d) {
+//   d.over = true;
+// });
 
-shape.on('mouseleave', function (d) {
-  d.over = false;
+// shape.on('mouseleave', function (d) {
+//   d.over = false;
+// });
+
+shape.on('click', function (d) {
+  d.filled = !!!d.filled;
 });
 
 function tick(e) {
